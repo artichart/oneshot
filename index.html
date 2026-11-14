@@ -35,9 +35,15 @@ button.primary{width:100%;padding:16px;border:0;border-radius:16px;background:va
 button.primary:disabled{opacity:.35}
 button.okbtn{width:100%;padding:14px;border:0;border-radius:16px;background:var(--ok);color:#06281d;font-size:16px;font-weight:700}
 button.ghost{padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:transparent;color:var(--text);font-size:14px}
-.dots{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:12px}
-.dots i{aspect-ratio:1;border-radius:50%;background:#1e2747;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;color:var(--mute)}
-.dots i.on{background:var(--ok);color:#06281d;font-weight:700}
+.jcal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:12px;text-align:center}
+.jcal .h{font-size:11px;color:var(--mute)}
+.jcal .c{border-radius:10px;padding:4px 0 5px;background:#1e2747;min-height:50px}
+.jcal .c b{display:block;font-size:11px;font-weight:400;color:var(--mute)}
+.jcal .c span{display:block;font-size:20px;line-height:1.35}
+.jcal .c.ok{background:#173a33}.jcal .c.bad{background:#3a1d24}.jcal .c.miss{background:#3a3217}
+.jcal .c.we,.jcal .c.out{background:transparent}.jcal .c.out{opacity:.35}
+.jcal .c.today{outline:2px solid var(--text)}
+.jcal .c.goal b{color:var(--accent);font-weight:700}
 .hero{font-size:44px;font-weight:700;line-height:1.1}
 .state{border-radius:18px;padding:18px 16px;margin-bottom:14px;text-align:center}
 .state.wait{background:var(--card)}
@@ -106,7 +112,8 @@ label{display:block;font-size:13px;color:var(--mute);margin:10px 0 6px}
     <div class="card">
       <div class="row between"><span class="mute">นิสัยใหม่ 21 วัน</span><span class="mute" id="streakSub"></span></div>
       <div class="hero" id="streakBig"></div>
-      <div class="dots" id="dots"></div>
+      <div class="jcal" id="jcal"></div>
+      <div class="mute" style="margin-top:8px">✅ รักษาสัญญา · 🎯 TP · 🛑 SL (ตามระบบ) · ❌ ผิดสัญญา · ⭕ ยังไม่เช็คอิน (กดได้) · 🏁 วันที่ 21</div>
     </div>
     <div class="state" id="state"></div>
     <div class="card">
@@ -296,8 +303,8 @@ function render() { renderToday(); if (curView === 'stats') renderStats(); }
 function renderToday() {
   const now = Date.now(), k = tKey(now), d = db.days[k] || {}, st = streak(), s = db.set;
   $('streakBig').textContent = st >= GOAL ? '🏆 ' + st + ' วัน' : 'วันที่ ' + st + ' / ' + GOAL;
-  $('streakSub').textContent = st >= GOAL ? 'ติดเป็นนิสัยแล้ว' : 'อีก ' + (GOAL - st) + ' วัน';
-  $('dots').innerHTML = Array.from({ length: GOAL }, (_, i) => `<i class="${i < Math.min(st, GOAL) ? 'on' : ''}">${i + 1}</i>`).join('');
+  $('streakSub').textContent = st >= GOAL ? 'ติดเป็นนิสัยแล้ว' : 'อีก ' + (GOAL - st) + ' วันทำการ';
+  renderJourney(k, st);
   $('ruleList').innerHTML = s.rules.map(r => `<li>${esc(r)}</li>`).join('');
 
   const [a, b] = winOf(k), t = d.trade, el = $('state');
@@ -339,6 +346,36 @@ function renderToday() {
   const today = tKey(now); let miss = null;
   for (let i = 1; i <= 7; i++) { const kk = addK(today, -i); if (status(kk, today) === 'miss' && Object.keys(db.days).some(x => x <= kk)) { miss = kk; break; } }
   $('ciTitle').innerHTML = 'เช็คอินวันนี้' + (miss ? ` <span style="color:var(--accent);font-size:13px;font-weight:400" onclick="openCheck('${miss}')">· ${kShort(miss)} ยังไม่เช็คอิน ›</span>` : '');
+}
+
+// ปฏิทินเส้นทาง 21 วัน: เริ่มสัปดาห์ที่สตรีคปัจจุบันเริ่ม → ถึงสัปดาห์ของวันที่ 21
+function renderJourney(today, st) {
+  let start = today;                                         // วันแรกของสตรีคปัจจุบัน (วันทำการ)
+  for (let k = today, n = 0; n < st; k = addK(k, -1)) { const s = status(k, today); if (s === 'ok') { n++; start = k; } }
+  if (st >= GOAL) start = addK(today, -27);                  // ครบแล้ว: โชว์ 4 สัปดาห์ล่าสุด
+  // วันทำการที่ 21 นับจาก start (วันที่ยังไม่ผ่าน = วันทำการข้างหน้า)
+  let goalK = null, end = today;
+  if (st < GOAL) { for (let k = start, n = 0; ; k = addK(k, 1)) { if (!isWeekend(k) || (db.days[k] && db.days[k].trade)) n++; if (n === GOAL) { goalK = k; break; } } end = goalK; }
+  const mon = addK(start, -((new Date(keyMs(start)).getDay() + 6) % 7));
+  const sun = addK(end, 6 - ((new Date(keyMs(end)).getDay() + 6) % 7));
+  let h = ['จ','อ','พ','พฤ','ศ','ส','อา'].map(x => `<div class="h">${x}</div>`).join('');
+  for (let k = mon; k <= sun; k = addK(k, 1)) {
+    const d = db.days[k] || {}, t = d.trade, we = isWeekend(k) && !t, future = k > today;
+    const s = future ? 'future' : status(k, today);
+    let icon = '·', cls = '';
+    if (we) { icon = '🛋️'; cls = 'we'; }
+    else if (future) icon = k === goalK ? '🏁' : '⬜';
+    else if (s === 'ok') { icon = t && t.res === 'tp' ? '🎯' : t && t.res === 'sl' ? '🛑' : '✅'; cls = 'ok'; }
+    else if (s === 'bad') { icon = '❌'; cls = 'bad'; }
+    else if (s === 'miss') { icon = '⭕'; cls = 'miss'; }
+    else if (s === 'pending') icon = t && !t.res ? '⏳' : t ? (t.res === 'tp' ? '🎯' : t.res === 'sl' ? '🛑' : '✅') : '🎯';
+    if (k < start && !we) cls += ' out';
+    if (k === today) cls += ' today';
+    if (k === goalK) cls += ' goal';
+    const tap = !future && !we && k !== today ? `onclick="openCheck('${k}')"` : '';
+    h += `<div class="c ${cls}" ${tap}><b>${new Date(keyMs(k)).getDate()}</b><span>${icon}</span></div>`;
+  }
+  $('jcal').innerHTML = h;
 }
 
 // ---------- gate ----------
