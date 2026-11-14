@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="OneShot">
+<meta name="theme-color" content="#0e1424">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>OneShot</title>
+<style>
+:root{
+  --bg:#0e1424; --card:#18203a; --card2:#202a4a; --line:#2c3760;
+  --text:#eef1fa; --mute:#8b94b3; --accent:#ffb547; --ok:#3fd0a0; --bad:#ff6b6b;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Noto Sans Thai",sans-serif;
+  -webkit-user-select:none;user-select:none}
+body{padding:env(safe-area-inset-top) 0 calc(72px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px}
+header h1{font-size:20px;margin:0;letter-spacing:.5px}
+header h1 b{color:var(--ok)}
+.iconbtn{width:40px;height:40px;border-radius:50%;border:0;background:var(--card);color:var(--text);font-size:18px}
+main{padding:0 16px}
+.view{display:none}.view.on{display:block}
+.card{background:var(--card);border-radius:18px;padding:16px;margin-bottom:14px}
+.row{display:flex;gap:10px;align-items:center}
+.between{justify-content:space-between}
+.mute{color:var(--mute);font-size:13px}
+button.primary{width:100%;padding:16px;border:0;border-radius:16px;background:var(--accent);color:#1b1300;font-size:18px;font-weight:700}
+button.primary:disabled{opacity:.35}
+button.okbtn{width:100%;padding:14px;border:0;border-radius:16px;background:var(--ok);color:#06281d;font-size:16px;font-weight:700}
+button.ghost{padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:transparent;color:var(--text);font-size:14px}
+.dots{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:12px}
+.dots i{aspect-ratio:1;border-radius:50%;background:#1e2747;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;color:var(--mute)}
+.dots i.on{background:var(--ok);color:#06281d;font-weight:700}
+.hero{font-size:44px;font-weight:700;line-height:1.1}
+.state{border-radius:18px;padding:18px 16px;margin-bottom:14px;text-align:center}
+.state.wait{background:var(--card)}
+.state.go{background:#173a33}
+.state.open{background:#3a3217}
+.state.win{background:#173a33}
+.state.loss{background:#3a1d24}
+.state.closed{background:var(--card)}
+.state h2{margin:4px 0 6px;font-size:22px}
+.state p{margin:4px 0;color:#cfd5ea;font-size:15px;line-height:1.55}
+.vows{margin:0;padding:0;list-style:none}
+.vows li{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--line);font-size:15px}
+.vows li:last-child{border-bottom:0}
+.tg{display:flex;gap:6px}
+.tg button{width:46px;padding:8px 0;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--mute);font-size:15px}
+.tg button.y{background:var(--ok);border-color:var(--ok);color:#06281d;font-weight:700}
+.tg button.n{background:var(--bad);border-color:var(--bad);color:#fff;font-weight:700}
+.chk{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);font-size:15px}
+.chk .box{width:26px;height:26px;border-radius:8px;border:2px solid var(--line);flex:none;display:flex;align-items:center;justify-content:center}
+.chk.on .box{background:var(--ok);border-color:var(--ok);color:#06281d;font-weight:700}
+.chk.auto{opacity:.9}
+.chk.fail .box{background:var(--bad);border-color:var(--bad);color:#fff}
+.emo{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
+.emo button{padding:12px 6px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:15px}
+.emo button.on{background:var(--ok);color:#06281d;border-color:var(--ok);font-weight:700}
+.emo button.on.badc{background:var(--bad);border-color:var(--bad);color:#fff}
+.res{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}
+.res button{padding:14px 6px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:15px;font-weight:600}
+.stats3{display:grid;grid-template-columns:repeat(3,1fr);text-align:center;gap:6px}
+.stats3 .v{font-size:20px;font-weight:700}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center;margin-top:10px}
+.cal .h{font-size:11px;color:var(--mute)}
+.cal .d{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:13px;border:1px solid transparent}
+.cal .d.ok{background:var(--ok);color:#06281d;font-weight:700}
+.cal .d.bad{background:var(--bad);color:#fff;font-weight:700}
+.cal .d.miss{border-color:var(--accent);color:var(--accent)}
+.cal .d.skip{color:#4a5378}
+.cal .d.today{outline:2px solid var(--text);outline-offset:1px}
+.hbar{display:grid;grid-template-columns:130px 1fr 26px;gap:8px;align-items:center;margin:7px 0;font-size:14px}
+.hbar i{display:block;height:10px;border-radius:5px;background:var(--bad)}
+.tabs{position:fixed;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(2,1fr);
+  background:#121a30;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.tabs button{background:none;border:0;color:var(--mute);padding:10px 0 8px;font-size:11px}
+.tabs button span{display:block;font-size:20px;margin-bottom:2px}
+.tabs button.on{color:var(--ok)}
+input,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:16px;-webkit-user-select:text;user-select:text;font-family:inherit}
+label{display:block;font-size:13px;color:var(--mute);margin:10px 0 6px}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end;z-index:10}
+.sheet.on{display:flex}
+.sheet .box{width:100%;background:var(--card);border-radius:22px 22px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto}
+.sheet h3{margin:0 0 6px}
+.toast{position:fixed;left:16px;right:16px;bottom:calc(84px + env(safe-area-inset-bottom));background:var(--card2);border:1px solid var(--line);
+  border-radius:14px;padding:14px;font-size:15px;z-index:20;display:none;line-height:1.5}
+.toast.on{display:block}
+</style>
+</head>
+<body>
+<header>
+  <button class="iconbtn" onclick="openSettings()" aria-label="ตั้งค่า">⚙︎</button>
+  <h1>One<b>Shot</b></h1>
+  <span style="width:40px"></span>
+</header>
+
+<main>
+  <section class="view on" id="v-today">
+    <div class="card">
+      <div class="row between"><span class="mute">นิสัยใหม่ 21 วัน</span><span class="mute" id="streakSub"></span></div>
+      <div class="hero" id="streakBig"></div>
+      <div class="dots" id="dots"></div>
+    </div>
+    <div class="state" id="state"></div>
+    <div class="card">
+      <b>สัญญา 5 ข้อ</b>
+      <ul class="vows mute" style="font-size:15px;margin-top:4px" id="vowList"></ul>
+    </div>
+    <div class="card">
+      <div class="row between"><b id="ciTitle">เช็คอินวันนี้</b><span id="ciBadge"></span></div>
+      <div class="mute" style="margin-top:4px">ตอบตามจริง รวมไม้ที่กดใน MT4 นอกแอปด้วย</div>
+      <button class="ghost" style="width:100%;margin-top:10px" onclick="openCheck()" id="ciBtn">เช็คอิน</button>
+    </div>
+  </section>
+
+  <section class="view" id="v-stats">
+    <div class="card">
+      <div class="stats3">
+        <div><div class="v" id="s1"></div><div class="mute">ติดกันตอนนี้</div></div>
+        <div><div class="v" id="s2"></div><div class="mute">ติดกันสูงสุด</div></div>
+        <div><div class="v" id="s3"></div><div class="mute">วันที่รักษาสัญญา</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row between">
+        <button class="iconbtn" onclick="shiftMonth(-1)">‹</button><b id="monLbl"></b><button class="iconbtn" onclick="shiftMonth(1)">›</button>
+      </div>
+      <div class="cal" id="cal"></div>
+      <div class="mute" style="margin-top:10px">🟢 รักษาสัญญา · 🔴 ผิดสัญญา · ⭕ ยังไม่เช็คอิน (กดเพื่อเช็คอินย้อนหลัง) · เสาร์–อาทิตย์ไม่นับ</div>
+    </div>
+    <div class="card">
+      <div class="stats3">
+        <div><div class="v" id="s4"></div><div class="mute">ไม้ตามระบบ</div></div>
+        <div><div class="v" id="s5"></div><div class="mute">TP / SL</div></div>
+        <div><div class="v" id="s6"></div><div class="mute">ห้ามใจได้</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <b>ผิดสัญญาข้อไหนบ่อย</b>
+      <div id="breakList" style="margin-top:6px"></div>
+    </div>
+  </section>
+</main>
+
+<nav class="tabs">
+  <button class="on" data-v="today"><span>🎯</span>วันนี้</button>
+  <button data-v="stats"><span>📅</span>สถิติ</button>
+</nav>
+
+<div class="toast" id="toast" onclick="this.classList.remove('on')"></div>
+
+<!-- gate -->
+<div class="sheet" id="shGate" onclick="if(event.target===this)closeSheet(this)">
+  <div class="box">
+    <h3>ก่อนกดเข้าไม้</h3>
+    <div class="mute">ติ๊กให้ครบทุกข้อ ปุ่มถึงจะกดได้</div>
+    <div id="gateList"></div>
+    <label>อารมณ์ตอนนี้</label>
+    <div class="emo" id="emoBox"></div>
+    <div id="emoWarn" style="color:var(--bad);margin-top:8px;font-size:14px"></div>
+    <button class="primary" style="margin-top:14px" id="gateGo" onclick="enterTrade()">เข้าไม้ตามระบบ</button>
+  </div>
+</div>
+
+<!-- check-in -->
+<div class="sheet" id="shCheck" onclick="if(event.target===this)closeSheet(this)">
+  <div class="box">
+    <h3 id="ckTitle">เช็คอิน</h3>
+    <ul class="vows" id="ckList"></ul>
+    <label>บันทึกสั้นๆ (ไม่ใส่ก็ได้)</label>
+    <textarea id="ckNote" rows="2" placeholder="เช่น อยากเอาคืนตอน 22:10 แต่ปิดแอปได้"></textarea>
+    <button class="primary" style="margin-top:14px" onclick="saveCheck()">บันทึก</button>
+  </div>
+</div>
+
+<!-- settings -->
+<div class="sheet" id="shSet" onclick="if(event.target===this)closeSheet(this)">
+  <div class="box">
+    <h3>ตั้งค่า</h3>
+    <div class="row">
+      <div style="flex:1"><label>เวลาเทรด เริ่ม</label><input type="time" id="stWs"></div>
+      <div style="flex:1"><label>ถึง</label><input type="time" id="stWe"></div>
+    </div>
+    <label>ระบบ / ท่าเข้า</label><input id="stSetup">
+    <div class="row">
+      <div style="flex:1"><label>SL (จุด)</label><input type="number" id="stSl" inputmode="decimal"></div>
+      <div style="flex:1"><label>TP (จุด)</label><input type="number" id="stTp" inputmode="decimal"></div>
+      <div style="flex:1"><label>Lot</label><input id="stLot" inputmode="decimal"></div>
+    </div>
+    <button class="primary" style="margin-top:14px" onclick="saveSettings()">บันทึก</button>
+    <div class="mute" style="margin-top:8px">⚠️ แก้ค่าพวกนี้ตอนนอกเวลาเทรดเท่านั้น ไม่ใช่ระหว่างวินโดว์</div>
+    <label style="margin-top:18px">ข้อมูลอยู่ในเครื่องนี้เท่านั้น ควรสำรองไว้เป็นระยะ</label>
+    <div class="row">
+      <button class="ghost" style="flex:1" onclick="exportData()">สำรองข้อมูล</button>
+      <button class="ghost" style="flex:1" onclick="document.getElementById('imp').click()">กู้คืน</button>
+    </div>
+    <input type="file" id="imp" accept="application/json,.json" style="display:none" onchange="importData(this.files[0])">
+    <div class="mute" id="lastBackup" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<script>
+// ---------- constants (ต้องอยู่ก่อน load()) ----------
+const KEY = 'oneshot.v1';
+const H = 3600e3, MIN = 60e3, DAY_CUT = 5 * H;     // วันเทรดเริ่มตี 5 · ไม้หลังเที่ยงคืน = ของเมื่อวาน
+const GOAL = 21;
+const TH_DAY = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+const TH_MON = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const VOWS = [['⏰', 'เทรดตรงเวลา'], ['🦅', 'เทรดตรงระบบ'], ['1️⃣', 'วันละไม้เดียว'], ['🧊', 'ไม่เอาคืน'], ['✋', 'ไม่ OVT']];
+const EMOS = [['calm', '😌 นิ่ง', true], ['excited', '😬 ตื่นเต้น', true], ['revenge', '😤 อยากเอาคืน', false], ['greed', '🤑 อยากได้เยอะ', false]];
+const DEF_SET = { ws: '21:30', we: '23:00', setup: '🦅 โฉบ (หลุดกรอบ → นกออก)', sl: 10, tp: 15, lot: '0.10' };
+
+let db = load();
+function load() {
+  let d;
+  try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+  if (d && d.days) { d.set = Object.assign({}, DEF_SET, d.set); return d; }
+  return { days: {}, set: Object.assign({}, DEF_SET), lastBackup: null };
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) { alert('บันทึกไม่ได้: ' + e.message); } }
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
+
+// ---------- helpers ----------
+function pad(n) { return String(n).padStart(2, '0'); }
+function dayKey(ms) { const d = new Date(ms); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function tKey(ms) { return dayKey(ms - DAY_CUT); }
+function keyMs(k) { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d).getTime(); }
+function addK(k, n) { const t = new Date(keyMs(k)); t.setDate(t.getDate() + n); return dayKey(t.getTime()); }
+const $ = id => document.getElementById(id);
+const hm = ms => { const d = new Date(ms); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+const kShort = k => { const t = new Date(keyMs(k)); return TH_DAY[t.getDay()] + ' ' + t.getDate() + ' ' + TH_MON[t.getMonth()]; };
+const isWeekend = k => { const g = new Date(keyMs(k)).getDay(); return g === 0 || g === 6; };
+const toMin = s => { const [h, m] = s.split(':').map(Number); return (h < 5 ? h + 24 : h) * 60 + m; }; // ตี 1 = 25:00 ต่อจากคืนนี้
+const nowMin = ms => (ms - keyMs(tKey(ms))) / MIN;
+const winOf = k => [keyMs(k) + toMin(db.set.ws) * MIN, keyMs(k) + toMin(db.set.we) * MIN];
+const inWin = (ms) => { const [a, b] = winOf(tKey(ms)); return ms >= a && ms < b; };
+const day = k => db.days[k] || (db.days[k] = {});
+const dur = ms => { const m = Math.max(0, Math.round(ms / MIN)); return m < 60 ? m + ' นาที' : Math.floor(m / 60) + ' ชม. ' + (m % 60) + ' นาที'; };
+
+// สถานะวัน: ok / bad / miss (วันทำการที่ผ่านไปแล้วยังไม่เช็คอิน) / pending (วันนี้) / skip (เสาร์–อาทิตย์ไม่มีอะไร)
+function status(k, today = tKey(Date.now())) {
+  const d = db.days[k];
+  if (d && d.check) return d.check.v.every(Boolean) ? 'ok' : 'bad';
+  if (k === today) return 'pending';
+  if (isWeekend(k) && !(d && d.trade)) return 'skip';
+  return 'miss';
+}
+function streak() {
+  const today = tKey(Date.now()); let n = 0;
+  for (let k = today, i = 0; i < 4000; k = addK(k, -1), i++) {
+    const s = status(k, today);
+    if (s === 'ok') n++; else if (s === 'pending' || s === 'skip') continue; else break;
+  }
+  return n;
+}
+function bestStreak() {
+  const ks = Object.keys(db.days).sort(); if (!ks.length) return 0;
+  let best = 0, cur = 0;
+  for (let k = ks[0], today = tKey(Date.now()); k <= today; k = addK(k, 1)) {
+    const s = status(k, today);
+    if (s === 'ok') best = Math.max(best, ++cur); else if (s === 'bad' || s === 'miss') cur = 0;
+  }
+  return best;
+}
+
+// ---------- tabs ----------
+let curView = 'today';
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  curView = b.dataset.v;
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + curView));
+  render();
+});
+function render() { renderToday(); if (curView === 'stats') renderStats(); }
+
+// ---------- today ----------
+function renderToday() {
+  const now = Date.now(), k = tKey(now), d = db.days[k] || {}, st = streak(), s = db.set;
+  $('streakBig').textContent = st >= GOAL ? '🏆 ' + st + ' วัน' : 'วันที่ ' + st + ' / ' + GOAL;
+  $('streakSub').textContent = st >= GOAL ? 'ติดเป็นนิสัยแล้ว' : 'อีก ' + (GOAL - st) + ' วัน';
+  $('dots').innerHTML = Array.from({ length: GOAL }, (_, i) => `<i class="${i < Math.min(st, GOAL) ? 'on' : ''}">${i + 1}</i>`).join('');
+  $('vowList').innerHTML = VOWS.map((v, i) => `<li><span>${v[0]} ${v[1]}</span><span>${[s.ws + '–' + s.we, s.setup.split(' (')[0], '1 ไม้', 'SL แล้วจบวัน', 'ห้ามเพิ่มไม้/lot'][i]}</span></li>`).join('');
+
+  const [a, b] = winOf(k), t = d.trade, el = $('state');
+  let cls, html;
+  if (isWeekend(k) && !t) { cls = 'closed'; html = `<div style="font-size:34px">🛋️</div><h2>วันหยุด ตลาดปิด</h2><p>พักให้เต็มที่ ไม่นับวันนี้</p>`; }
+  else if (t && !t.res) {
+    cls = 'open';
+    html = `<div style="font-size:34px">⏳</div><h2>ไม้เปิดอยู่ · ${hm(t.t)}</h2>
+      <p>SL ${s.sl} · TP ${s.tp} · lot ${s.lot} ตั้งแล้ว<br><b>ปล่อยให้ระบบทำงาน ห้ามขยับ SL/TP</b><br>วางมือถือ ปิด MT4 ได้เลย</p>
+      <div class="res"><button onclick="setRes('tp')">🎯 ชน TP</button><button onclick="setRes('sl')">🛑 ชน SL</button>
+      <button onclick="setRes('be')">➖ เสมอตัว</button><button onclick="setRes('manual')">✋ ปิดเอง</button></div>`;
+  } else if (t) {
+    const win = t.res === 'tp';
+    cls = win ? 'win' : t.res === 'sl' ? 'loss' : 'closed';
+    html = win ? `<div style="font-size:34px">🎉</div><h2>ชนะ · จบวันแล้ว</h2><p>ถอนกำไรออก · ปิด MT4<br>ไม้ที่สองคือคืนกำไรให้ตลาด</p>`
+      : t.res === 'sl' ? `<div style="font-size:34px">🧊</div><h2>SL = ค่าใช้จ่ายของระบบ</h2><p><b>จบวันแล้ว ห้ามเอาคืน · ห้ามฝากเพิ่ม</b><br>ปิด MT4 แล้วไปทำอย่างอื่น<br>พรุ่งนี้ระบบยังอยู่</p>`
+      : `<div style="font-size:34px">✅</div><h2>จบวันแล้ว</h2><p>ครบ 1 ไม้ของวันนี้ ปิด MT4</p>`;
+    html += `<button class="okbtn" style="margin-top:12px" onclick="urge()">😤 อยากเข้าอีก — กดตรงนี้แทน ${d.urges ? '(' + d.urges + ')' : ''}</button>`;
+  } else if (now < a) {
+    cls = 'wait';
+    html = `<div style="font-size:34px">🕰️</div><h2>ยังไม่ถึงเวลา</h2><p>วินโดว์เปิด <b>${s.ws}</b> · อีก ${dur(a - now)}<br>ตอนนี้ไม่ต้องเปิดกราฟ ไม่ต้องเปิด MT4</p>
+      <button class="okbtn" style="margin-top:12px" onclick="urge()">😬 อยากเข้าก่อนเวลา — กดตรงนี้แทน ${d.urges ? '(' + d.urges + ')' : ''}</button>`;
+  } else if (now < b) {
+    cls = 'go';
+    html = `<div style="font-size:34px">🎯</div><h2>วินโดว์เปิด · เหลือ ${dur(b - now)}</h2><p>รอ ${s.setup.split(' (')[0]} ให้ครบเท่านั้น<br>ไม่มีสัญญาณ = ไม่เทรด ก็นับว่ารักษาสัญญา</p>
+      <button class="primary" style="margin-top:12px" onclick="openGate()">จะเข้าไม้</button>`;
+  } else {
+    cls = 'closed';
+    html = `<div style="font-size:34px">🌙</div><h2>หมดเวลาเทรดวันนี้</h2><p>ไม่มีไม้ก็จบวันแบบรักษาสัญญาได้<br>เช็คอินแล้วไปนอน</p>
+      <button class="okbtn" style="margin-top:12px" onclick="urge()">😤 อยากเข้านอกเวลา — กดตรงนี้แทน ${d.urges ? '(' + d.urges + ')' : ''}</button>`;
+  }
+  el.className = 'state ' + cls; el.innerHTML = html;
+
+  const ck = d.check;
+  $('ciBadge').innerHTML = ck ? (ck.v.every(Boolean) ? '<span style="color:var(--ok)">✅ รักษาสัญญา</span>' : '<span style="color:var(--bad)">❌ ผิด ' + ck.v.filter(x => !x).length + ' ข้อ</span>') : '';
+  $('ciBtn').textContent = ck ? 'แก้เช็คอิน' : 'เช็คอิน';
+  // เตือนวันทำการที่ยังไม่เช็คอิน
+  const today = tKey(now); let miss = null;
+  for (let i = 1; i <= 7; i++) { const kk = addK(today, -i); if (status(kk, today) === 'miss' && Object.keys(db.days).some(x => x <= kk)) { miss = kk; break; } }
+  $('ciTitle').innerHTML = 'เช็คอินวันนี้' + (miss ? ` <span style="color:var(--accent);font-size:13px;font-weight:400" onclick="openCheck('${miss}')">· ${kShort(miss)} ยังไม่เช็คอิน ›</span>` : '');
+}
+
+// ---------- gate ----------
+let gate = {};
+function openGate() {
+  gate = { sys: false, news: false, sl: false, emo: null };
+  drawGate(); $('shGate').classList.add('on');
+}
+function drawGate() {
+  const now = Date.now(), k = tKey(now), s = db.set, okTime = inWin(now), okOne = !(db.days[k] && db.days[k].trade);
+  const row = (on, txt, key, fail) => `<div class="chk ${on ? 'on' : ''} ${fail ? 'fail' : ''} ${key ? '' : 'auto'}" ${key ? `onclick="gate.${key}=!gate.${key};drawGate()"` : ''}><span class="box">${fail ? '✕' : on ? '✓' : ''}</span><span>${txt}</span></div>`;
+  $('gateList').innerHTML =
+    row(okTime, `⏰ อยู่ในเวลา ${s.ws}–${s.we}` + (okTime ? '' : ' — <b>นอกเวลา ไม่เข้า</b>'), null, !okTime) +
+    row(okOne, '1️⃣ วันนี้ยังไม่มีไม้' + (okOne ? '' : ' — <b>ครบแล้ว</b>'), null, !okOne) +
+    row(gate.sys, `🦅 สัญญาณ ${s.setup} ครบทุกเงื่อนไข ไม่ได้เดา`, 'sys') +
+    row(gate.news, '📰 ไม่มีข่าว USD แรงในอีก 30 นาที', 'news') +
+    row(gate.sl, `🛑 ตั้ง SL ${s.sl} / TP ${s.tp} / lot ${s.lot} พร้อมกับตอนกดเข้า`, 'sl');
+  $('emoBox').innerHTML = EMOS.map(e => `<button class="${gate.emo === e[0] ? 'on' + (e[2] ? '' : ' badc') : ''}" onclick="gate.emo='${e[0]}';drawGate()">${e[1]}</button>`).join('');
+  const emo = EMOS.find(e => e[0] === gate.emo);
+  $('emoWarn').textContent = emo && !emo[2] ? (gate.emo === 'revenge' ? 'อยากเอาคืน = สมองยังไม่พร้อม · วันนี้ไม่เข้า' : 'อยากได้เยอะ = ความโลภนำ · วันนี้ไม่เข้า') : '';
+  $('gateGo').disabled = !(okTime && okOne && gate.sys && gate.news && gate.sl && emo && emo[2]);
+}
+function enterTrade() {
+  const k = tKey(Date.now());
+  day(k).trade = { t: Date.now(), emo: gate.emo, res: null };
+  save(); closeSheet($('shGate')); render();
+  toast(`ตั้ง SL ${db.set.sl} / TP ${db.set.tp} ทันที แล้ววางมือถือ`);
+}
+function setRes(r) {
+  const k = tKey(Date.now()), t = db.days[k] && db.days[k].trade; if (!t) return;
+  const name = { tp: 'ชน TP', sl: 'ชน SL', be: 'เสมอตัว', manual: 'ปิดเอง' }[r];
+  if (!confirm('บันทึกผล: ' + name + '?')) return;
+  t.res = r; t.rt = Date.now(); save(); render();
+}
+function urge() {
+  const k = tKey(Date.now()); day(k).urges = (db.days[k].urges || 0) + 1; save(); render();
+  const msgs = ['ห้ามใจได้ 1 ครั้ง 💪 ความอยากจะลดลงเองใน 5 นาที', 'ปิด MT4 · ลุกไปดื่มน้ำ', 'ไม้ที่สองไม่เคยช่วยให้รวย มันแค่ทำให้พอร์ตหาย', 'วันนี้จบแล้ว พรุ่งนี้ระบบยังอยู่', 'นับวันที่ ' + streak() + ' ไว้ อย่าให้กลับไปเริ่ม 1'];
+  toast(msgs[Math.floor(Math.random() * msgs.length)]);
+}
+
+// ---------- check-in ----------
+let ckKey = null, ckV = [];
+function openCheck(k) {
+  ckKey = k || tKey(Date.now());
+  const d = db.days[ckKey] || {}, t = d.trade;
+  // ค่าเริ่มจากที่แอปรู้ · ไม้ที่กดเองใน MT4 แอปไม่เห็น ต้องแก้เป็น ✗ เอง
+  ckV = d.check ? d.check.v.slice() : [t ? inWin(t.t) : true, t ? !!t.emo : true, true, true, true];
+  $('ckTitle').textContent = 'เช็คอิน ' + kShort(ckKey);
+  $('ckNote').value = d.check ? d.check.note || '' : '';
+  drawCheck(); $('shCheck').classList.add('on');
+}
+function drawCheck() {
+  $('ckList').innerHTML = VOWS.map((v, i) => `<li><span>${v[0]} ${v[1]}</span><span class="tg">
+    <button class="${ckV[i] ? 'y' : ''}" onclick="ckV[${i}]=true;drawCheck()">✓</button><button class="${ckV[i] ? '' : 'n'}" onclick="ckV[${i}]=false;drawCheck()">✗</button></span></li>`).join('');
+}
+function saveCheck() {
+  day(ckKey).check = { v: ckV.slice(), note: $('ckNote').value.trim(), t: Date.now() };
+  save(); closeSheet($('shCheck')); render();
+  if (ckV.every(Boolean)) toast('✅ รักษาสัญญาได้อีกวัน · ติดกัน ' + streak() + ' วัน');
+  else toast('บันทึกแล้ว · เริ่มนับ 1 ใหม่พรุ่งนี้ ไม่เป็นไร ความซื่อตรงกับตัวเองคือส่วนหนึ่งของวินัย');
+}
+
+// ---------- stats ----------
+let monOff = 0;
+function shiftMonth(n) { monOff = Math.min(0, monOff + n); renderStats(); }
+function renderStats() {
+  const today = tKey(Date.now()), ks = Object.keys(db.days);
+  $('s1').textContent = streak(); $('s2').textContent = bestStreak();
+  $('s3').textContent = ks.filter(k => status(k, today) === 'ok').length;
+  const trades = ks.map(k => db.days[k].trade).filter(Boolean);
+  $('s4').textContent = trades.length;
+  $('s5').textContent = trades.filter(t => t.res === 'tp').length + ' / ' + trades.filter(t => t.res === 'sl').length;
+  $('s6').textContent = ks.reduce((a, k) => a + (db.days[k].urges || 0), 0);
+  const now = new Date(), first = new Date(now.getFullYear(), now.getMonth() + monOff, 1);
+  const y = first.getFullYear(), mo = first.getMonth(), nDays = new Date(y, mo + 1, 0).getDate();
+  $('monLbl').textContent = TH_MON[mo] + ' ' + (y + 543);
+  const start = ks.length ? ks.sort()[0] : today;
+  let h = ['จ','อ','พ','พฤ','ศ','ส','อา'].map(x => `<div class="h">${x}</div>`).join('') + '<div></div>'.repeat((first.getDay() + 6) % 7);
+  for (let i = 1; i <= nDays; i++) {
+    const k = dayKey(new Date(y, mo, i).getTime());
+    const s = k > today || k < start ? 'skip' : status(k, today);
+    const tap = k <= today && k >= start && !isWeekend(k) ? `onclick="openCheck('${k}')"` : '';
+    h += `<div class="d ${s === 'pending' ? '' : s} ${k === today ? 'today' : ''}" ${tap}>${i}</div>`;
+  }
+  $('cal').innerHTML = h;
+  const br = VOWS.map((v, i) => [v, ks.filter(k => db.days[k].check && !db.days[k].check.v[i]).length]).filter(x => x[1]).sort((a, b) => b[1] - a[1]);
+  const mx = br.length ? br[0][1] : 1;
+  $('breakList').innerHTML = br.length ? br.map(([v, n]) => `<div class="hbar"><span>${v[0]} ${v[1]}</span><i style="width:${n / mx * 100}%"></i><span class="mute">${n}</span></div>`).join('')
+    : '<div class="mute">ยังไม่เคยผิดสัญญา 👍</div>';
+}
+
+// ---------- settings / backup ----------
+function openSettings() {
+  const s = db.set;
+  $('stWs').value = s.ws; $('stWe').value = s.we; $('stSetup').value = s.setup; $('stSl').value = s.sl; $('stTp').value = s.tp; $('stLot').value = s.lot;
+  $('lastBackup').textContent = db.lastBackup ? 'สำรองล่าสุด ' + kShort(dayKey(db.lastBackup)) + ' ' + hm(db.lastBackup) : 'ยังไม่เคยสำรอง';
+  $('shSet').classList.add('on');
+}
+function saveSettings() {
+  if (inWin(Date.now()) && !confirm('ตอนนี้อยู่ในเวลาเทรด แก้กฎกลางวินโดว์จริงหรือ?')) return;
+  const ws = $('stWs').value, we = $('stWe').value;
+  if (!ws || !we || toMin(we) <= toMin(ws)) return alert('เวลาจบต้องหลังเวลาเริ่ม');
+  db.set = { ws, we, setup: $('stSetup').value.trim() || DEF_SET.setup, sl: parseFloat($('stSl').value) || DEF_SET.sl, tp: parseFloat($('stTp').value) || DEF_SET.tp, lot: $('stLot').value.trim() || DEF_SET.lot };
+  save(); closeSheet($('shSet')); render();
+}
+function download(name, text, type) {
+  const file = new File([text], name, { type });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) return navigator.share({ files: [file] }).catch(() => {});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+function exportData() { db.lastBackup = Date.now(); save(); download('oneshot-' + dayKey(Date.now()) + '.json', JSON.stringify(db, null, 1), 'application/json'); openSettings(); }
+function importData(file) {
+  if (!file) return;
+  file.text().then(t => {
+    const d = JSON.parse(t);
+    if (!d.days) throw new Error('ไฟล์ไม่ถูกต้อง');
+    if (!confirm('แทนที่ข้อมูลปัจจุบันด้วย ' + Object.keys(d.days).length + ' วัน?')) return;
+    localStorage.setItem(KEY, JSON.stringify(d)); db = load(); closeSheet($('shSet')); render();
+  }).catch(e => alert('กู้คืนไม่ได้: ' + e.message));
+  $('imp').value = '';
+}
+let toastH;
+function toast(msg) { $('toast').textContent = msg; $('toast').classList.add('on'); clearTimeout(toastH); toastH = setTimeout(() => $('toast').classList.remove('on'), 5000); }
+function closeSheet(el) { el.classList.remove('on'); }
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+render();
+setInterval(renderToday, 30e3);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+</script>
+</body>
+</html>
