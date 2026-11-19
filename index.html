@@ -240,7 +240,7 @@ const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 const EMOS = [['calm', '😌 นิ่ง', true], ['excited', '😬 ตื่นเต้น', true], ['revenge', '😤 อยากเอาคืน', false], ['greed', '🤑 อยากได้เยอะ', false]];
 // 14 พ.ย. 69 จากกระดาน "เทรดเพื่อใช้ชีวิต" ของต้น
 const OLD_RULES = ['รอสัญญาณ: นกออก, โต้คลื่น, ดาบ', 'วิ่ง / เวท'];   // ที่ผมอ่านลายมือผิด → แก้ทับถ้ายังเป็นค่านี้
-const DEF_SET = { ws: '14:00', we: '17:00', wd: [2, 3, 4], ws2: '21:30', we2: '23:00', wd2: [1, 2, 3, 4, 5], ws3: '00:30', we3: '01:00', wd3: [1, 2, 3, 4, 5], sigs: ['🦅 นกอินทรี', '🏄 โต้คลื่น', '⚔️ ดาบ', '🌙 0030'], sl: 1000, tp: 1000, lot: '0.05', risk: 'เสี่ยง $50/ไม้ (0.05 lot · SL 10$) · TP 3 ไม้ = $150 พอแล้ว',
+const DEF_SET = { ws: '14:00', we: '17:00', wd: [2, 3, 4], ws2: '21:30', we2: '23:00', wd2: [1, 2, 3, 4, 5], ws3: '00:30', we3: '01:00', wd3: [1, 2, 3, 4, 5], sigs: ['🦅 นกอินทรี', '🏄 โต้คลื่น', '⚔️ ดาบ', '🌙 0030', '🪤 หลอกแดก'], sl: 1000, tp: 1000, lot: '0.05', risk: 'เสี่ยง $50/ไม้ (0.05 lot · SL 10$) · TP 3 ไม้ = $150 พอแล้ว',
   rules: ['บ่าย 14:00–17:00 (อ พ พฤ) · NY 21:30–23:00 · เที่ยงคืนครึ่ง 00:30–01:00 (จ–ศ)', 'เสี่ยง $50/ไม้ (0.05 lot · SL 10$) · TP 3 ไม้ = $150 พอแล้ว', 'เช็คเทรนด์ H4 · เช็ค OI wall', 'รอสัญญาณ: นกอินทรี, โต้คลื่น, ดาบ', 'ตั้ง SL 1000 TP 1000 ทันที', 'ห้ามยุ่งกับ order (ลบแอป)', '1 ไม้ต่อ session'] };
 
 let db = load();
@@ -285,6 +285,8 @@ function load() {
     }
     // 19 พ.ย. 69 00:40 ต้นสั่งเพิ่มสัญญาณ 🌙 0030
     if (d.set && d.set.sigs && !d.set.sigs.includes('🌙 0030')) d.set.sigs.push('🌙 0030');
+    // 19 พ.ย. 69 ต้นสั่งเพิ่มสัญญาณ 🪤 หลอกแดก (ครั้งเดียว · ลบในตั้งค่าได้)
+    if (d.set && d.set.sigs && !d.migJudas) { if (!d.set.sigs.includes('🪤 หลอกแดก')) d.set.sigs.push('🪤 หลอกแดก'); d.migJudas = true; }
     // 19 พ.ย. 69 01:04 รอบตีครึ่งเหลือ 00:30–01:00
     if (d.set && !d.mig0100) { d.set.we3 = '01:00'; if (d.set.rules) d.set.rules = d.set.rules.map(r => /^บ่าย 15/.test(r) ? DEF_SET.rules[0] : r); d.mig0100 = true; }
     // 19 พ.ย. 69 10:50 ต้นสั่ง "เปิด 14.00-17.00" (Frankfurt เปิด)
@@ -452,9 +454,11 @@ function renderJourney(today, st) {
 // ---------- gate ----------
 let gate = {};
 function openGate() {
-  gate = { h4: false, oi: false, sig: null, news: false, sl: false, emo: null };
+  gate = { h4: false, oi: false, sig: [], news: false, sl: false, emo: null };
   drawGate(); $('shGate').classList.add('on');
 }
+// 19 พ.ย. 69 ต้นสั่ง "กดปุ่มได้หลายอัน" → สัญญาณเลือกได้หลายตัว (บันทึกเป็น 'A + B')
+function togSig(i) { const x = db.set.sigs[i]; gate.sig = gate.sig.includes(x) ? gate.sig.filter(y => y !== x) : gate.sig.concat(x); drawGate(); }
 function drawGate() {
   const now = Date.now(), k = tKey(now), s = db.set, okTime = inWin(now), okOne = !sesUsed(k, db.days[k] && db.days[k].trade);
   const row = (on, txt, key, fail) => `<div class="chk ${on ? 'on' : ''} ${fail ? 'fail' : ''} ${key ? '' : 'auto'}" ${key ? `onclick="gate.${key}=!gate.${key};drawGate()"` : ''}><span class="tick">${fail ? '✕' : on ? '✓' : ''}</span><span>${txt}</span></div>`;
@@ -465,16 +469,16 @@ function drawGate() {
     row(gate.oi, '🧱 เช็ค OI wall แล้ว ไม่เข้าชนกำแพง', 'oi') +
     row(gate.news, '📰 ไม่มีข่าว USD แรงในอีก 30 นาที', 'news') +
     row(gate.sl, `🛑 ตั้ง SL ${s.sl} / TP ${s.tp} ทันที · lot ${s.lot} (${esc(s.risk)})`, 'sl') +
-    `<label>สัญญาณที่เห็น (ครบทุกเงื่อนไข ไม่ได้เดา)</label><div class="emo">${s.sigs.map((x, i) => `<button class="${gate.sig === x ? 'on' : ''}" onclick="gate.sig=db.set.sigs[${i}];drawGate()">${esc(x)}</button>`).join('')}</div>`;
+    `<label>สัญญาณที่เห็น (ครบทุกเงื่อนไข ไม่ได้เดา · เลือกได้หลายอัน)</label><div class="emo">${s.sigs.map((x, i) => `<button class="${gate.sig.includes(x) ? 'on' : ''}" onclick="togSig(${i})">${esc(x)}</button>`).join('')}</div>`;
   $('emoBox').innerHTML = EMOS.map(e => `<button class="${gate.emo === e[0] ? 'on' + (e[2] ? '' : ' badc') : ''}" onclick="gate.emo='${e[0]}';drawGate()">${e[1]}</button>`).join('');
   const emo = EMOS.find(e => e[0] === gate.emo);
   $('emoWarn').textContent = emo && !emo[2] ? (gate.emo === 'revenge' ? 'อยากเอาคืน = สมองยังไม่พร้อม · วันนี้ไม่เข้า' : 'อยากได้เยอะ = ความโลภนำ · วันนี้ไม่เข้า') : '';
-  $('gateGo').disabled = !(okTime && okOne && gate.h4 && gate.oi && gate.sig && gate.news && gate.sl && emo && emo[2]);
+  $('gateGo').disabled = !(okTime && okOne && gate.h4 && gate.oi && gate.sig.length && gate.news && gate.sl && emo && emo[2]);
 }
 function enterTrade() {
   const k = tKey(Date.now());
   const dd = day(k); if (dd.trade) (dd.trades = dd.trades || []).push(dd.trade);
-  dd.trade = { t: Date.now(), emo: gate.emo, sig: gate.sig, res: null };
+  dd.trade = { t: Date.now(), emo: gate.emo, sig: gate.sig.join(' + '), res: null };
   save(); closeSheet($('shGate')); render();
   toast(`ตั้ง SL ${db.set.sl} / TP ${db.set.tp} ทันที · แล้วลบแอป วางมือถือ`);
 }
