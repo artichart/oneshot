@@ -240,8 +240,8 @@ const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 const EMOS = [['calm', '😌 นิ่ง', true], ['excited', '😬 ตื่นเต้น', true], ['revenge', '😤 อยากเอาคืน', false], ['greed', '🤑 อยากได้เยอะ', false]];
 // 14 พ.ย. 69 จากกระดาน "เทรดเพื่อใช้ชีวิต" ของต้น
 const OLD_RULES = ['รอสัญญาณ: นกออก, โต้คลื่น, ดาบ', 'วิ่ง / เวท'];   // ที่ผมอ่านลายมือผิด → แก้ทับถ้ายังเป็นค่านี้
-const DEF_SET = { ws: '14:00', we: '17:00', wd: [2, 3, 4], ws2: '21:30', we2: '23:00', wd2: [1, 2, 3, 4, 5], ws3: '00:30', we3: '01:00', wd3: [1, 2, 3, 4, 5], sigs: ['🦅 นกอินทรี', '🏄 โต้คลื่น', '⚔️ ดาบ', '🌙 0030'], sl: 1000, tp: 1000, lot: '0.10', risk: 'MM 2% · เสี่ยง $100 กำไร $100',
-  rules: ['บ่าย 14:00–17:00 (อ พ พฤ) · NY 21:30–23:00 · ตีครึ่ง 00:30–01:00 (จ–ศ)', 'MM 2% · เสี่ยง $100 กำไร $100', 'เช็คเทรนด์ H4 · เช็ค OI wall', 'รอสัญญาณ: นกอินทรี, โต้คลื่น, ดาบ', 'ตั้ง SL 1000 TP 1000 ทันที', 'ห้ามยุ่งกับ order (ลบแอป)', '1 ไม้ต่อ session'] };
+const DEF_SET = { ws: '14:00', we: '17:00', wd: [2, 3, 4], ws2: '21:30', we2: '23:00', wd2: [1, 2, 3, 4, 5], ws3: '00:30', we3: '01:00', wd3: [1, 2, 3, 4, 5], sigs: ['🦅 นกอินทรี', '🏄 โต้คลื่น', '⚔️ ดาบ', '🌙 0030'], sl: 1000, tp: 1000, lot: '0.05', risk: 'เสี่ยง $50/ไม้ (0.05 lot · SL 10$) · TP 3 ไม้ = $150 พอแล้ว',
+  rules: ['บ่าย 14:00–17:00 (อ พ พฤ) · NY 21:30–23:00 · ตีครึ่ง 00:30–01:00 (จ–ศ)', 'เสี่ยง $50/ไม้ (0.05 lot · SL 10$) · TP 3 ไม้ = $150 พอแล้ว', 'เช็คเทรนด์ H4 · เช็ค OI wall', 'รอสัญญาณ: นกอินทรี, โต้คลื่น, ดาบ', 'ตั้ง SL 1000 TP 1000 ทันที', 'ห้ามยุ่งกับ order (ลบแอป)', '1 ไม้ต่อ session'] };
 
 let db = load();
 function load() {
@@ -289,6 +289,12 @@ function load() {
     if (d.set && !d.mig0100) { d.set.we3 = '01:00'; if (d.set.rules) d.set.rules = d.set.rules.map(r => /^บ่าย 15/.test(r) ? DEF_SET.rules[0] : r); d.mig0100 = true; }
     // 19 พ.ย. 69 10:50 ต้นสั่ง "เปิด 14.00-17.00" (Frankfurt เปิด)
     if (d.set && !d.mig1400) { d.set.ws = '14:00'; if (d.set.rules) d.set.rules = d.set.rules.map(r => /^บ่าย 1[45]/.test(r) ? DEF_SET.rules[0] : r); d.mig1400 = true; }
+    // 19 พ.ย. 69 ต้นสั่ง "เสี่ยงครั้ง 50$ · TP 3 ไม้ได้ 150$ ตรงความต้องการพอดี"
+    if (d.set && !d.mig50) {
+      d.set.risk = DEF_SET.risk; d.set.lot = '0.05';
+      if (d.set.rules) d.set.rules = d.set.rules.map(r => /^MM 2%|เสี่ยง \$/.test(r) ? DEF_SET.risk : r);
+      d.mig50 = true;
+    }
     if (d.set && d.set.rules) d.set.rules = d.set.rules.map(r => r === OLD_RULES[0] ? DEF_SET.rules[3] : r === OLD_RULES[1] ? DEF_SET.rules[6] : r);
     if (d.set && d.set.sigs) d.set.sigs = d.set.sigs.map(x => x === '🦅 นกออก' ? '🦅 นกอินทรี' : x);
     d.set = Object.assign({}, DEF_SET, d.set); return d;
