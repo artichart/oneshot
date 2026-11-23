@@ -235,13 +235,13 @@ const H = 3600e3, MIN = 60e3, DAY_CUT = 5 * H;     // วันเทรดเ�
 const GOAL = 21;
 const TH_DAY = ['อา','จ','อ','พ','พฤ','ศ','ส'];
 const TH_MON = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-const VOWS = [['⏰', 'เทรดตรงเวลา'], ['🦅', 'เทรดตรงระบบ'], ['1️⃣', 'วันละไม้เดียว'], ['🧊', 'ไม่เอาคืน'], ['✋', 'ไม่ OVT'], ['🙌', 'ไม่ยุ่งกับ order']];
+const VOWS = [['⏰', 'เทรดตรงเวลา'], ['🦅', 'เทรดตรงระบบ'], ['2️⃣', 'วันละไม่เกิน 2 ไม้ · แพ้ไม้แรกหยุด'], ['🧊', 'ไม่เอาคืน'], ['✋', 'ไม่ OVT'], ['🙌', 'ไม่ยุ่งกับ order']];
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const EMOS = [['calm', '😌 นิ่ง', true], ['excited', '😬 ตื่นเต้น', true], ['revenge', '😤 อยากเอาคืน', false], ['greed', '🤑 อยากได้เยอะ', false]];
 // 14 พ.ย. 69 จากกระดาน "เทรดเพื่อใช้ชีวิต" ของต้น
 const OLD_RULES = ['รอสัญญาณ: นกออก, โต้คลื่น, ดาบ', 'วิ่ง / เวท'];   // ที่ผมอ่านลายมือผิด → แก้ทับถ้ายังเป็นค่านี้
-const DEF_SET = { ws: '21:30', we: '23:00', wd: [1, 2, 3, 4, 5], ws2: '00:30', we2: '01:00', wd2: [1, 2, 3, 4, 5], ws3: '', we3: '', wd3: [], sigs: ['🦅 นกอินทรี', '🏄 โต้คลื่น', '⚔️ ดาบ', '🌙 0030', '🪤 หลอกแดก'], sl: 1000, tp: 1000, lot: '0.05', risk: 'เสี่ยง $50/ไม้ (0.05 lot · SL 10$) · TP 3 ไม้ = $150 พอแล้ว',
-  rules: ['NY 21:30–23:00 · เที่ยงคืนครึ่ง 00:30–01:00 (จ–ศ) · บ่ายปิด (เอาเวลาไป backtest)', 'เสี่ยง $50/ไม้ (0.05 lot · SL 10$) · TP 3 ไม้ = $150 พอแล้ว', 'เช็คเทรนด์ H4 · เช็ค OI wall', 'รอสัญญาณ: นกอินทรี, โต้คลื่น, ดาบ', 'ตั้ง SL 1000 TP 1000 ทันที', 'ห้ามยุ่งกับ order (ลบแอป)', '1 ไม้ต่อ session'] };
+const DEF_SET = { ws: '21:30', we: '23:00', wd: [1, 2, 3, 4, 5], ws2: '00:30', we2: '01:00', wd2: [1, 2, 3, 4, 5], ws3: '', we3: '', wd3: [], sigs: ['🦅 นกอินทรี', '🏄 โต้คลื่น', '⚔️ ดาบ', '🌙 0030', '🪤 หลอกแดก'], sl: 1000, tp: 1000, lot: '0.05', lot2: '0.10', risk: 'ฝาก $50/วัน · ไม้แรก 0.05 · ชนะ → ไม้สอง 0.10 · ได้ +$150 พอแล้ว',
+  rules: ['NY 21:30–23:00 · เที่ยงคืนครึ่ง 00:30–01:00 (จ–ศ) · บ่ายปิด (เอาเวลาไป backtest)', 'ฝาก $50/วัน · ไม้แรก 0.05 → แพ้หยุด · ชนะ → ไม้สอง 0.10 → ชนะ/แพ้ก็หยุด', 'เช็คเทรนด์ H4 · เช็ค OI wall', 'รอสัญญาณ: นกอินทรี, โต้คลื่น, ดาบ', 'ตั้ง SL 1000 TP 1000 ทันที', 'ห้ามยุ่งกับ order (ลบแอป)', 'วันละไม่เกิน 2 ไม้ · ไม้ระบบเท่านั้น'] };
 
 let db = load();
 function load() {
@@ -303,6 +303,12 @@ function load() {
       if (d.set.rules) d.set.rules = d.set.rules.map(r => /^บ่าย 1[45]/.test(r) ? DEF_SET.rules[0] : r);
       d.migNoAft = true;
     }
+    // 23 พ.ย. 69 ต้นสั่ง "OneShot แก้ด้วย 2 ไม้ต่อวัน" (กฎ 22 พ.ย.: ฝาก $50 · ไม้แรก 0.05 แพ้หยุด · ชนะ → ไม้สอง 0.10 แล้วจบ)
+    if (d.set && !d.migTwo) {
+      Object.assign(d.set, { risk: DEF_SET.risk, lot: '0.05', lot2: '0.10' });
+      if (d.set.rules) d.set.rules = d.set.rules.map(r => /^เสี่ยง \$50/.test(r) ? DEF_SET.rules[1] : /^1 ไม้ต่อ session|^วันละ 1 ไม้/.test(r) ? DEF_SET.rules[6] : r);
+      d.migTwo = true;
+    }
     if (d.set && d.set.rules) d.set.rules = d.set.rules.map(r => r.replace('ตีครึ่ง 00:30', 'เที่ยงคืนครึ่ง 00:30'));   // 19 พ.ย. 69 ต้นแก้คำ
     if (d.set && d.set.rules) d.set.rules = d.set.rules.map(r => r === OLD_RULES[0] ? DEF_SET.rules[3] : r === OLD_RULES[1] ? DEF_SET.rules[6] : r);
     if (d.set && d.set.sigs) d.set.sigs = d.set.sigs.map(x => x === '🦅 นกออก' ? '🦅 นกอินทรี' : x);
@@ -336,9 +342,10 @@ const wins = k => WS(db.set).filter(w => w[0] && w[1] && dOk(w[2], k))
 const winOf = (k, ms = Date.now()) => { const w = wins(k); return w.find(x => ms < x[1]) || w[w.length - 1] || [Infinity, Infinity]; };
 const inWin = (ms) => wins(tKey(ms)).some(([a, b]) => ms >= a && ms < b);
 const winTxt = s => WS(s).filter(w => w[0] && w[1]).map(w => w[0] + '–' + w[1] + (w[2] && w[2].length && w[2].length < 5 ? ' (' + dTxt(w[2]) + ')' : '')).join(' · ');
-// 1 ไม้ต่อ session: ไม้ของวันนี้ถือว่า "ใช้รอบไปแล้ว" ถ้าเปิดในรอบเดียวกับรอบปัจจุบัน/ถัดไป หรือยังไม่จบ
-const winIdx = (k, ms) => { const w = wins(k); const i = w.findIndex(x => ms < x[1]); return i < 0 ? w.length : i; };
-const sesUsed = (k, t, ms = Date.now()) => !!t && (!t.res || winIdx(k, t.t) >= winIdx(k, ms));
+// วันละไม่เกิน 2 ไม้ (23 พ.ย. 69): ไม้แรก lot → แพ้/เสมอ/ปิดเอง = หยุดทั้งวัน · ชนะ TP → ไม้สอง lot2 → จบไม่ว่าผล
+const tList = d => (d && d.trades || []).concat(d && d.trade ? [d.trade] : []);
+const nextOk = d => { const a = tList(d); return a.length === 0 || (a.length === 1 && a[0].res === 'tp'); };
+const nextLot = d => tList(d).length ? (db.set.lot2 || DEF_SET.lot2) : db.set.lot;
 const day = k => db.days[k] || (db.days[k] = {});
 const dur = ms => { const m = Math.max(0, Math.round(ms / MIN)); return m < 60 ? m + ' นาที' : Math.floor(m / 60) + ' ชม. ' + (m % 60) + ' นาที'; };
 
@@ -386,21 +393,22 @@ function renderToday() {
   renderJourney(k, st);
   $('ruleList').innerHTML = s.rules.map(r => `<li>${esc(r)}</li>`).join('');
 
-  const [a, b] = winOf(k), t = sesUsed(k, d.trade) ? d.trade : null, el = $('state');
+  const [a, b] = winOf(k), n = tList(d).length, t = d.trade && (!d.trade.res || !nextOk(d)) ? d.trade : null, el = $('state');
+  const nx = n === 1 && nextOk(d) ? `<p style="margin-top:8px"><b>🎯 ไม้แรกชน TP · ไม้สองได้อีก 1 ไม้ lot ${esc(nextLot(d))}</b><br>ต้องเป็นไม้ระบบ · ชนะหรือแพ้ก็จบวัน</p>` : '';
   let cls, html;
   if (isWeekend(k) && !t) { cls = 'closed'; html = `<div style="font-size:34px">🛋️</div><h2>วันหยุด ตลาดปิด</h2><p>พักให้เต็มที่ ไม่นับวันนี้</p>`; }
   else if (t && !t.res) {
     cls = 'open';
-    html = `<div style="font-size:34px">⏳</div><h2>ไม้เปิดอยู่ · ${hm(t.t)}</h2>
-      <p>${t.sig ? esc(t.sig) + ' · ' : ''}SL ${s.sl} · TP ${s.tp} · lot ${s.lot}<br><b>ห้ามยุ่งกับ order · ลบแอป MT4</b><br>วางมือถือ ไปใช้ชีวิต</p>
+    html = `<div style="font-size:34px">⏳</div><h2>ไม้ ${n}/2 เปิดอยู่ · ${hm(t.t)}</h2>
+      <p>${t.sig ? esc(t.sig) + ' · ' : ''}SL ${s.sl} · TP ${s.tp} · lot ${esc(t.lot || s.lot)}<br><b>ห้ามยุ่งกับ order · ลบแอป MT4</b><br>วางมือถือ ไปใช้ชีวิต</p>
       <div class="res"><button onclick="setRes('tp')">🎯 ชน TP</button><button onclick="setRes('sl')">🛑 ชน SL</button>
       <button onclick="setRes('be')">➖ เสมอตัว</button><button onclick="setRes('manual')">✋ ปิดเอง</button></div>`;
   } else if (t) {
     const win = t.res === 'tp';
     cls = win ? 'win' : t.res === 'sl' ? 'loss' : 'closed';
-    html = win ? `<div style="font-size:34px">🎉</div><h2>ชนะ · จบรอบนี้แล้ว</h2><p>ถอนกำไรออก · ปิด MT4<br>ไม้ที่สองในรอบเดียวกันคือคืนกำไรให้ตลาด</p>`
-      : t.res === 'sl' ? `<div style="font-size:34px">🧊</div><h2>SL = ค่าใช้จ่ายของระบบ</h2><p><b>จบรอบนี้แล้ว ห้ามเอาคืน · ห้ามฝากเพิ่ม</b><br>ปิด MT4 แล้วไปทำอย่างอื่น<br>รอบถัดไประบบยังอยู่</p>`
-      : `<div style="font-size:34px">✅</div><h2>จบรอบนี้แล้ว</h2><p>ครบ 1 ไม้ของรอบนี้ ปิด MT4</p>`;
+    html = win ? `<div style="font-size:34px">🎉</div><h2>ชนะ 2 ไม้ · จบวันแล้ว</h2><p>ถอนกำไรออก · ปิด MT4<br>ไม้ที่ 3 คือคืนกำไรให้ตลาด</p>`
+      : t.res === 'sl' ? `<div style="font-size:34px">🧊</div><h2>SL = ค่าใช้จ่ายของระบบ</h2><p><b>จบวันแล้ว ห้ามเอาคืน · ห้ามฝากเพิ่ม</b><br>ปิด MT4 แล้วไปทำอย่างอื่น<br>พรุ่งนี้ระบบยังอยู่</p>`
+      : `<div style="font-size:34px">✅</div><h2>จบวันแล้ว</h2><p>${n >= 2 ? 'ครบ 2 ไม้ของวันนี้' : 'ไม้แรกไม่ได้ชน TP = หยุด'} · ปิด MT4</p>`;
     html += `<button class="okbtn" style="margin-top:12px" onclick="urge()">😤 อยากเข้าอีก — กดตรงนี้แทน ${d.urges ? '(' + d.urges + ')' : ''}</button>`;
   } else if (now < a) {
     cls = 'wait';
@@ -409,12 +417,13 @@ function renderToday() {
   } else if (now < b) {
     cls = 'go';
     html = `<div style="font-size:34px">🎯</div><h2>วินโดว์เปิด · เหลือ ${dur(b - now)}</h2><p>รอ ${s.sigs.map(esc).join(' / ')} เท่านั้น<br>ไม่มีสัญญาณ = ไม่เทรด ก็นับว่ารักษาสัญญา</p>
-      <button class="primary" style="margin-top:12px" onclick="openGate()">จะเข้าไม้</button>`;
+      <button class="primary" style="margin-top:12px" onclick="openGate()">จะเข้าไม้${n ? 'ที่ 2' : ''}</button>`;
   } else {
     cls = 'closed';
-    html = `<div style="font-size:34px">🌙</div><h2>หมดเวลาเทรดวันนี้</h2><p>ไม่มีไม้ก็จบวันแบบรักษาสัญญาได้<br>เช็คอินแล้วไปนอน</p>
+    html = `<div style="font-size:34px">🌙</div><h2>หมดเวลาเทรดวันนี้</h2><p>${n ? 'ไม่มีไม้สองก็จบวันแบบได้กำไร' : 'ไม่มีไม้ก็จบวันแบบรักษาสัญญาได้'}<br>เช็คอินแล้วไปนอน</p>
       <button class="okbtn" style="margin-top:12px" onclick="urge()">😤 อยากเข้านอกเวลา — กดตรงนี้แทน ${d.urges ? '(' + d.urges + ')' : ''}</button>`;
   }
+  if (!t && nx && cls !== 'closed') html += nx;
   el.className = 'state ' + cls; el.innerHTML = html;
 
   const ck = d.check;
@@ -466,15 +475,15 @@ function openGate() {
 // 19 พ.ย. 69 ต้นสั่ง "กดปุ่มได้หลายอัน" → สัญญาณเลือกได้หลายตัว (บันทึกเป็น 'A + B')
 function togSig(i) { const x = db.set.sigs[i]; gate.sig = gate.sig.includes(x) ? gate.sig.filter(y => y !== x) : gate.sig.concat(x); drawGate(); }
 function drawGate() {
-  const now = Date.now(), k = tKey(now), s = db.set, okTime = inWin(now), okOne = !sesUsed(k, db.days[k] && db.days[k].trade);
+  const now = Date.now(), k = tKey(now), s = db.set, okTime = inWin(now), dk = db.days[k], okOne = nextOk(dk) && !(dk && dk.trade && !dk.trade.res), nN = tList(dk).length, lot = nextLot(dk);
   const row = (on, txt, key, fail) => `<div class="chk ${on ? 'on' : ''} ${fail ? 'fail' : ''} ${key ? '' : 'auto'}" ${key ? `onclick="gate.${key}=!gate.${key};drawGate()"` : ''}><span class="tick">${fail ? '✕' : on ? '✓' : ''}</span><span>${txt}</span></div>`;
   $('gateList').innerHTML =
     row(okTime, `⏰ อยู่ในเวลา ${winTxt(s)}` + (okTime ? '' : ' — <b>นอกเวลา ไม่เข้า</b>'), null, !okTime) +
-    row(okOne, '1️⃣ รอบนี้ยังไม่มีไม้' + (okOne ? '' : ' — <b>ครบแล้ว</b>'), null, !okOne) +
+    row(okOne, okOne ? `${nN ? '2️⃣ ไม้ที่ 2/2 (ไม้แรกชน TP)' : '1️⃣ ไม้แรกของวัน'}` : '⛔ วันนี้จบแล้ว — <b>' + (nN >= 2 ? 'ครบ 2 ไม้' : 'ไม้แรกไม่ชนะ = หยุด') + '</b>', null, !okOne) +
     row(gate.h4, '📈 เช็คเทรนด์ H4 แล้ว ไม่สวนเทรนด์', 'h4') +
     row(gate.oi, '🧱 เช็ค OI wall แล้ว ไม่เข้าชนกำแพง', 'oi') +
     row(gate.news, '📰 ไม่มีข่าว USD แรงในอีก 30 นาที', 'news') +
-    row(gate.sl, `🛑 ตั้ง SL ${s.sl} / TP ${s.tp} ทันที · lot ${s.lot} (${esc(s.risk)})`, 'sl') +
+    row(gate.sl, `🛑 ตั้ง SL ${s.sl} / TP ${s.tp} ทันที · <b>lot ${esc(lot)}</b> (${esc(s.risk)})`, 'sl') +
     `<label>สัญญาณที่เห็น (ครบทุกเงื่อนไข ไม่ได้เดา · เลือกได้หลายอัน)</label><div class="emo">${s.sigs.map((x, i) => `<button class="${gate.sig.includes(x) ? 'on' : ''}" onclick="togSig(${i})">${esc(x)}</button>`).join('')}</div>`;
   $('emoBox').innerHTML = EMOS.map(e => `<button class="${gate.emo === e[0] ? 'on' + (e[2] ? '' : ' badc') : ''}" onclick="gate.emo='${e[0]}';drawGate()">${e[1]}</button>`).join('');
   const emo = EMOS.find(e => e[0] === gate.emo);
@@ -484,9 +493,10 @@ function drawGate() {
 function enterTrade() {
   const k = tKey(Date.now());
   const dd = day(k); if (dd.trade) (dd.trades = dd.trades || []).push(dd.trade);
-  dd.trade = { t: Date.now(), emo: gate.emo, sig: gate.sig.join(' + '), res: null };
+  const lot = (dd.trades || []).length ? (db.set.lot2 || DEF_SET.lot2) : db.set.lot;
+  dd.trade = { t: Date.now(), emo: gate.emo, sig: gate.sig.join(' + '), res: null, lot };
   save(); closeSheet($('shGate')); render();
-  toast(`ตั้ง SL ${db.set.sl} / TP ${db.set.tp} ทันที · แล้วลบแอป วางมือถือ`);
+  toast(`lot ${lot} · ตั้ง SL ${db.set.sl} / TP ${db.set.tp} ทันที · แล้วลบแอป วางมือถือ`);
 }
 function setRes(r) {
   const k = tKey(Date.now()), t = db.days[k] && db.days[k].trade; if (!t) return;
@@ -496,7 +506,7 @@ function setRes(r) {
 }
 function urge() {
   const k = tKey(Date.now()); day(k).urges = (db.days[k].urges || 0) + 1; save(); render();
-  const msgs = ['ห้ามใจได้ 1 ครั้ง 💪 ความอยากจะลดลงเองใน 5 นาที', 'ปิด MT4 · ลุกไปดื่มน้ำ', 'ไม้ที่สองไม่เคยช่วยให้รวย มันแค่ทำให้พอร์ตหาย', 'วันนี้จบแล้ว พรุ่งนี้ระบบยังอยู่', 'นับวันที่ ' + streak() + ' ไว้ อย่าให้กลับไปเริ่ม 1'];
+  const msgs = ['ห้ามใจได้ 1 ครั้ง 💪 ความอยากจะลดลงเองใน 5 นาที', 'ปิด MT4 · ลุกไปดื่มน้ำ', 'ไม้ที่สามไม่เคยช่วยให้รวย มันแค่ทำให้พอร์ตหาย', 'วันนี้จบแล้ว พรุ่งนี้ระบบยังอยู่', 'นับวันที่ ' + streak() + ' ไว้ อย่าให้กลับไปเริ่ม 1'];
   toast(msgs[Math.floor(Math.random() * msgs.length)]);
 }
 
@@ -566,7 +576,7 @@ function saveSettings() {
   const ws2 = $('stWs2').value, we2 = $('stWe2').value;
   if ((ws2 || we2) && (!ws2 || !we2 || toMin(we2) <= toMin(ws2))) return alert('รอบ 2: เวลาจบต้องหลังเวลาเริ่ม (หรือเว้นว่างทั้งคู่)');
   const sigs = $('stSigs').value.split(',').map(x => x.trim()).filter(Boolean), rules = $('stRules').value.split('\n').map(x => x.trim()).filter(Boolean);
-  db.set = { ws, we, ws2, we2, ws3: $('stWs3').value, we3: $('stWe3').value, wd3: dParse($('stWd3').value), wd: dParse($('stWd').value), wd2: dParse($('stWd2').value), sigs: sigs.length ? sigs : DEF_SET.sigs, rules: rules.length ? rules : DEF_SET.rules, risk: $('stRisk').value.trim() || DEF_SET.risk, sl: parseFloat($('stSl').value) || DEF_SET.sl, tp: parseFloat($('stTp').value) || DEF_SET.tp, lot: $('stLot').value.trim() || DEF_SET.lot };
+  db.set = { ws, we, ws2, we2, ws3: $('stWs3').value, we3: $('stWe3').value, wd3: dParse($('stWd3').value), wd: dParse($('stWd').value), wd2: dParse($('stWd2').value), sigs: sigs.length ? sigs : DEF_SET.sigs, rules: rules.length ? rules : DEF_SET.rules, risk: $('stRisk').value.trim() || DEF_SET.risk, sl: parseFloat($('stSl').value) || DEF_SET.sl, tp: parseFloat($('stTp').value) || DEF_SET.tp, lot: $('stLot').value.trim() || DEF_SET.lot, lot2: db.set.lot2 || DEF_SET.lot2 };
   save(); closeSheet($('shSet')); render();
 }
 function download(name, text, type) {
