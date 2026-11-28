@@ -243,8 +243,9 @@ const OLD_RULES = ['รอสัญญาณ: นกออก, โต้คล�
 // ★★★ 27 พ.ย. 69 19:55 ต้นสั่ง "🎯 ONE SHOT แบบ sniper · วันละ 1 ไม้ · อาทิตย์ละ 3 ไม้ · เทรดเฉพาะ NY · ลงทุน 100$ กำไร 150$ · SL TP ตาม ATR default SL10 TP15 · ทำเป็นกฎ · ผมจะต้องเปลี่ยนแปลงตัวเองแล้วละ ไม่งั้นพายเรือวนอ่าง"
 // ★★ 27 พ.ย. 69 21:45 ต้นปรับ "ฝาก 50$ กำไร 75$ ก็โอเค แต่ต้องเทรดได้ทุกวัน" → 5 ไม้/สัปดาห์ (= 1 ไม้ทุกวัน จ–ศ) · เสี่ยง $50
 const WK_MAX = 5;
-const DEF_SET = { ws: '21:30', we: '23:00', wd: [1, 2, 3, 4, 5], ws2: '00:30', we2: '01:00', wd2: [1, 2, 3, 4, 5], ws3: '', we3: '', wd3: [], sigs: ['🦇 Night Watch', '🦉 0030', '🏄 BTG', '⚔️ V5', '🪤 หลอกแดก', '🌊 Wave3', '👤 H&S'], sl: 1000, tp: 1500, lot: '0.05', lot2: '0.05', risk: 'ฝาก $50+ · เสี่ยง $50 · TP $75 · SL = 2×ATR M5 (ขั้นต่ำ 10) · lot = 50 ÷ SL',
-  rules: ['🎯 ONE SHOT: วันละ 1 ไม้ ทุกวัน จ–ศ · ยิงแล้วจบวัน', 'NY เท่านั้น 21:30–23:00 · 00:30–01:00 (เฉพาะคืนที่ยังไม่ได้ไม้)', 'เสี่ยง $50 ต่อไม้ · TP = SL × 1.5 = +$75 · แพ้ = ไม่เติมเงินคืนนั้น', 'SL ตาม ATR: SL10/TP15 lot 0.05 · SL15/TP22.5 lot 0.03 · SL20/TP30 lot 0.02 · Balance ต้องมีอย่างน้อย $80 ถึงจะใช้ 0.05', 'ไม้แรกของระบบใดก็ได้ แล้วจบวัน · เช็ค H4 (EMA9) + OI wall', 'ตั้ง SL/TP ทันที · ห้ามยุ่งกับ order (ลบแอป)', 'ไม่งั้นพายเรือวนอ่าง'] };
+// ★★★ 28 พ.ย. 69 15:00 ต้นสั่ง "โฟกัส 3 ตัว (BTG · V5 · Night Watch) · วันละ 1 ไม้ · SL10$ TP15$ · กำไรวันละ 150$ · ทุน 5000$ · ครั้งนี้ผมเอาจริงไม่ได้มาเล่น"
+const DEF_SET = { ws: '21:30', we: '23:00', wd: [1, 2, 3, 4, 5], ws2: '', we2: '', wd2: [], ws3: '', we3: '', wd3: [], sigs: ['🦇 Night Watch', '⚔️ V5', '🏄 BTG'], sl: 1000, tp: 1500, lot: '0.10', lot2: '0.10', risk: 'ทุน $5,000 · lot 0.10 · SL 10$ = −$100 (2%) · TP 15$ = +$150',
+  rules: ['🎯 วันละ 1 ไม้ (จ–ศ) · ยิงแล้วจบวัน', 'NY 21:30–23:00 เท่านั้น', 'สัญญาณจาก 3 ระบบเท่านั้น: 🦇 Night Watch · ⚔️ V5 · 🏄 BTG', 'lot 0.10 · SL 10$ (1000 point) · TP 15$ (1500 point) ตั้งทันที', 'แพ้ = −$100 · ชนะ = +$150 → ถอน · ไม่เติมเงินคืนที่แพ้', 'ห้ามยุ่งกับ order (ลบแอป)', 'ครั้งนี้เอาจริง ไม่ได้มาเล่น'] };
 
 let db = load();
 function load() {
@@ -318,6 +319,11 @@ function load() {
       Object.assign(d.set, { sl: DEF_SET.sl, tp: DEF_SET.tp, lot: DEF_SET.lot, lot2: DEF_SET.lot2, risk: DEF_SET.risk, rules: DEF_SET.rules.slice(), sigs: DEF_SET.sigs.slice(),
         ws: '21:30', we: '23:00', wd: [1, 2, 3, 4, 5], ws2: '00:30', we2: '01:00', wd2: [1, 2, 3, 4, 5], ws3: '', we3: '', wd3: [] });
       d.migOneShot = true;
+    }
+    if (d.set && !d.migFocus3) {   // 28 พ.ย. 69 15:00 · 3 ระบบ · SL10/TP15 · lot 0.10 · ทุน 5000
+      Object.assign(d.set, { sl: DEF_SET.sl, tp: DEF_SET.tp, lot: DEF_SET.lot, lot2: DEF_SET.lot2, risk: DEF_SET.risk, rules: DEF_SET.rules.slice(), sigs: DEF_SET.sigs.slice(),
+        ws: '21:30', we: '23:00', wd: [1, 2, 3, 4, 5], ws2: '', we2: '', wd2: [], ws3: '', we3: '', wd3: [] });
+      d.migFocus3 = d.migOneShot50 = true;
     }
     if (d.set && !d.migOneShot50) {   // 27 พ.ย. 69 21:45 · เสี่ยง $50 / TP $75 · ทุกวัน
       Object.assign(d.set, { lot: DEF_SET.lot, lot2: DEF_SET.lot2, risk: DEF_SET.risk, rules: DEF_SET.rules.slice() });
@@ -422,7 +428,7 @@ function renderToday() {
   } else if (t) {
     const win = t.res === 'tp';
     cls = win ? 'win' : t.res === 'sl' ? 'loss' : 'closed';
-    html = win ? `<div style="font-size:34px">🎉</div><h2>+$75 · จบวันแล้ว</h2><p>ถอนกำไรออก · ปิด MT4<br>ไม้ที่ 2 คือคืนกำไรให้ตลาด<br>สัปดาห์นี้ ${wn}/${WK_MAX} ไม้</p>`
+    html = win ? `<div style="font-size:34px">🎉</div><h2>+$150 · จบวันแล้ว</h2><p>ถอนกำไรออก · ปิด MT4<br>ไม้ที่ 2 คือคืนกำไรให้ตลาด<br>สัปดาห์นี้ ${wn}/${WK_MAX} ไม้</p>`
       : t.res === 'sl' ? `<div style="font-size:34px">🧊</div><h2>SL = ค่าใช้จ่ายของระบบ</h2><p><b>จบวันแล้ว ห้ามเอาคืน · ห้ามฝากเพิ่ม</b><br>ปิด MT4 แล้วไปทำอย่างอื่น<br>พรุ่งนี้ระบบยังอยู่</p>`
       : `<div style="font-size:34px">✅</div><h2>จบวันแล้ว</h2><p>ONE SHOT ใช้ไปแล้ว · สัปดาห์นี้ ${wn}/${WK_MAX} ไม้ · ปิด MT4</p>`;
     html += `<button class="okbtn" style="margin-top:12px" onclick="urge()">😤 อยากเข้าอีก — กดตรงนี้แทน ${d.urges ? '(' + d.urges + ')' : ''}</button>`;
@@ -503,8 +509,8 @@ function drawGate() {
     row(gate.h4, '📈 เช็คเทรนด์ H4 แล้ว ไม่สวนเทรนด์', 'h4') +
     row(gate.oi, '🧱 เช็ค OI wall แล้ว ไม่เข้าชนกำแพง', 'oi') +
     row(gate.news, '📰 ไม่มีข่าว USD แรงในอีก 30 นาที', 'news') +
-    row(gate.sl, `🛑 ตั้ง SL/TP ทันที (ขั้นต่ำ ${s.sl} / ${s.tp} point) · <b>lot ${esc(lot)}</b> ที่ SL10 · SL15 → 0.03 · SL20 → 0.02 (${esc(s.risk)})`, 'sl') +
-    row(gate.bal, '💰 Balance ≥ $80 สำหรับ 0.05 (ไม่ถึง → ใช้ 0.03) · ไม่โดน stop out ก่อน SL', 'bal') +
+    row(gate.sl, `🛑 ตั้ง SL/TP ทันที (ขั้นต่ำ ${s.sl} / ${s.tp} point) · <b>lot ${esc(lot)}</b> · SL 10$ · TP 15$ (${esc(s.risk)})`, 'sl') +
+    row(gate.bal, '💰 Balance รับ SL $100 ได้ (≥ $200 ใน MT4) · ไม่โดน stop out ก่อน SL', 'bal') +
     `<label>สัญญาณที่เห็น (ครบทุกเงื่อนไข ไม่ได้เดา · เลือกได้หลายอัน)</label><div class="emo">${s.sigs.map((x, i) => `<button class="${gate.sig.includes(x) ? 'on' : ''}" onclick="togSig(${i})">${esc(x)}</button>`).join('')}</div>`;
   $('emoBox').innerHTML = EMOS.map(e => `<button class="${gate.emo === e[0] ? 'on' + (e[2] ? '' : ' badc') : ''}" onclick="gate.emo='${e[0]}';drawGate()">${e[1]}</button>`).join('');
   const emo = EMOS.find(e => e[0] === gate.emo);
@@ -517,7 +523,7 @@ function enterTrade() {
   const lot = db.set.lot;
   dd.trade = { t: Date.now(), emo: gate.emo, sig: gate.sig.join(' + '), res: null, lot };
   save(); closeSheet($('shGate')); render();
-  toast(`🎯 lot ${lot} (ที่ SL10) · ตั้ง SL/TP ทันที · แล้วลบแอป วางมือถือ`);
+  toast(`🎯 lot ${lot} · SL 10$ · TP 15$ ตั้งทันที · แล้วลบแอป วางมือถือ`);
 }
 function setRes(r) {
   const k = tKey(Date.now()), t = db.days[k] && db.days[k].trade; if (!t) return;
